@@ -1,9 +1,14 @@
 #include "MeshRenderer.h"
 
-MeshRenderer::MeshRenderer(MeshType modelType, Camera* _camera, btRigidBody* _rigidBody)
+MeshRenderer::MeshRenderer(MeshType modelType, std::string _name, Camera* _camera, btRigidBody* _rigidBody,
+	LightRenderer* _light, float _specularStrength, float _ambientStrength)
 {
+	name = _name;
 	rigidBody = _rigidBody;
 	camera = _camera;
+	light = _light;
+	ambientStrength = _ambientStrength;
+	specularStrength = _specularStrength;
 	
 	scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	position = glm::vec3(0.0, 0.0, 0.0);
@@ -45,6 +50,11 @@ MeshRenderer::MeshRenderer(MeshType modelType, Camera* _camera, btRigidBody* _ri
 	
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
 		reinterpret_cast<void*>((offsetof(Vertex, Vertex::texCoords))));
+
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+		reinterpret_cast<void*>(offsetof(Vertex, Vertex::normal)));
 
 	// Unbind the vertex array as a precaution
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -90,10 +100,30 @@ void MeshRenderer::draw()
 	GLint modelLoc = glGetUniformLocation(program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
+	// Set Texture
 	glBindTexture(GL_TEXTURE_2D, texture);
 
+	// Set Lighting
+	auto cameraPosLoc = glGetUniformLocation(program, "cameraPos");
+	glUniform3f(cameraPosLoc, camera->getCameraPosition().x, 
+		camera->getCameraPosition().y, camera->getCameraPosition().z);
+	
+	auto lightPosLoc = glGetUniformLocation(program, "lightPos");
+	glUniform3f(lightPosLoc, this->light->getPosition().x,
+		this->light->getPosition().y, this->light->getPosition().z);
+	
+	auto lightColorLoc = glGetUniformLocation(program, "lightColor");
+	glUniform3f(lightColorLoc, this->light->getColor().x,
+		this->light->getColor().y, this->light->getColor().z);
+	
+	auto specularStrengthLoc = glGetUniformLocation(program, "specularStrength");
+	glUniform1f(specularStrengthLoc, specularStrength);
+	
+	auto ambientStrengthLoc = glGetUniformLocation(program, "ambientStrength");
+	glUniform1f(ambientStrengthLoc, ambientStrength);
+
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
 	glBindVertexArray(0);
 }

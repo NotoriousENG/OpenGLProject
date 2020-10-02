@@ -74,7 +74,7 @@ void LightRenderer::draw()
 
 	// unbind the vertex array and program variable as a precaution
 	glBindVertexArray(0);
-	glUseProgram(0);
+	// glUseProgram(0);
 
 }
 
